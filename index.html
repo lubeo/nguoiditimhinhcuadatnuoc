@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ Chí Minh - Người đi tìm hình của đất nước</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải Google Fonts cho giao diện -->
+    <link href="https://fonts.googleapis.com/css2?family=Paytone+One&family=Merriweather:wght@400;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Tải Font Awesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Tải Tone.js cho hiệu ứng âm thanh (BGM Kahoot-style) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+
+    <style>
+        /* Định nghĩa fonts theo yêu cầu */
+        .font-header-footer { font-family: 'Paytone One', sans-serif; }
+        .font-normal { font-family: 'Merriweather', serif; }
+        .font-quiz { font-family: 'Montserrat', sans-serif; }
+
+        /* ========================================================= */
+        /* HIỆU ỨNG NỀN ĐỘNG (DYNAMIC BACKGROUND) */
+        /* ========================================================= */
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            /* Các màu chuyển: Xanh Dương Sẫm, Tím Hồng, Vàng Cam, Xanh Lam Nhạt */
+            background: linear-gradient(-45deg, #4F46E5, #EC4899, #F59E0B, #60A5FA);
+            background-size: 400% 400%; 
+            animation: gradient-animation 20s ease infinite; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Thẻ trò chơi chính */
+        .quiz-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(3px); 
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2); 
+            animation: fadeIn 0.5s ease-out;
+            z-index: 10; 
+        }
+
+        /* Wrapper chính */
+        #main-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            padding: 1rem 0; 
+        }
+
+        .text-glow {
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Hiệu ứng Bong Bóng */
+        .bubbles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; 
+        }
+
+        .bubbles span {
+            position: absolute; background: rgba(255, 255, 255, 0.4); border-radius: 50%; animation: moveUp 25s linear infinite;
+        }
+
+        @keyframes moveUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+        
+        .bubbles span:nth-child(1) { left: 10%; width: 20px; height: 20px; animation-duration: 10s; animation-delay: 0s; }
+        .bubbles span:nth-child(2) { left: 20%; width: 40px; height: 40px; animation-duration: 15s; animation-delay: 2s; }
+        .bubbles span:nth-child(3) { left: 35%; width: 15px; height: 15px; animation-duration: 12s; animation-delay: 4s; }
+        .bubbles span:nth-child(4) { left: 50%; width: 30px; height: 30px; animation-duration: 18s; animation-delay: 6s; }
+        .bubbles span:nth-child(5) { left: 65%; width: 25px; height: 25px; animation-duration: 14s; animation-delay: 8s; }
+        .bubbles span:nth-child(6) { left: 80%; width: 50px; height: 50px; animation-duration: 20s; animation-delay: 10s; }
+        .bubbles span:nth-child(7) { left: 90%; width: 10px; height: 10px; animation-duration: 11s; animation-delay: 12s; }
+        .bubbles span:nth-child(8) { left: 5%; width: 45px; height: 45px; animation-duration: 17s; animation-delay: 14s; }
+        .bubbles span:nth-child(9) { left: 75%; width: 35px; height: 35px; animation-duration: 13s; animation-delay: 16s; }
+        .bubbles span:nth-child(10) { left: 45%; width: 22px; height: 22px; animation-duration: 19s; animation-delay: 18s; }
+        .bubbles span:nth-child(11) { left: 25%; width: 18px; height: 18px; animation-duration: 16s; animation-delay: 1s; }
+        .bubbles span:nth-child(12) { left: 55%; width: 33px; height: 33px; animation-duration: 10s; animation-delay: 7s; }
+
+        /* Thanh đếm ngược thời gian (ProgressBar) */
+        #timer-bar-container {
+            height: 10px; background-color: #e5e7eb; border-radius: 9999px; margin-bottom: 20px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        #timer-bar {
+            width: 100%; height: 100%; background-color: #ef4444; transition: width linear; 
+        }
+
+        /* Animation cho các nút trả lời (giống Kahoot) */
+        .answer-button {
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, background-color 0.1s ease-out;
+        }
+        .answer-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Nút màu sắc sặc sỡ */
+        .color-1 { background-color: #ef4444; } /* Red */
+        .color-2 { background-color: #3b82f6; } /* Blue */
+        .color-3 { background-color: #10b981; } /* Green */
+        .color-4 { background-color: #f59e0b; } /* Yellow */
+
+        /* Modal/Notification */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); animation: modalFadeIn 0.3s ease-out; display: flex; align-items: center; justify-content: center; z-index: 50;
+        }
+        .modal-content-wrapper {
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-content {
+            animation: zoomIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        /* Keyframes */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('debug');
+
+        window.initializeApp = initializeApp;
+        window.getAuth = getAuth;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.getFirestore = getFirestore;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.addDoc = addDoc;
+        window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+        window.query = query;
+        window.limit = limit;
+        window.orderBy = orderBy;
+    </script>
+</head>
+
+<body class="p-4 md:p-8">
+    <!-- Lớp nền động - Bong bóng -->
+    <div class="bubbles">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <!-- Tiêu đề -->
+    <header class="w-full text-center py-4 text-white font-header-footer text-2xl md:text-3xl tracking-wider mb-6 z-20 text-glow">
+        <h1>HỒ CHÍ MINH - NGƯỜI ĐI TÌM HÌNH CỦA ĐẤT NƯỚC</h1>
+    </header>
+    
+    <!-- Wrapper chính cho nội dung có thể cuộn -->
+    <div id="main-wrapper" class="flex-grow">
+        <main id="app-container" class="w-full max-w-4xl quiz-card rounded-xl p-6 md:p-10 shadow-2xl"></main>
+    </div>
+
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 mt-6 text-white font-header-footer text-xs md:text-sm z-20">
+        <!-- Footer trống -->
+    </footer>
+
+    <!-- Modal cho thông báo và kết quả -->
+    <div id="modal-container" class="fixed inset-0 modal-overlay hidden">
+        <div class="modal-content-wrapper p-4 w-full flex justify-center items-start">
+            <div id="modal-content" class="modal-content bg-white p-6 md:p-10 rounded-xl shadow-2xl max-w-lg w-full m-4 font-normal text-center">
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 font-header-footer text-gray-800"></h3>
+                <p id="modal-message" class="text-base mb-6 text-gray-700 font-normal"></p>
+                <p id="modal-score" class="text-xl font-bold mb-6 text-green-600 hidden font-header-footer"></p>
+                <div id="modal-explanation" class="text-sm italic text-gray-600 mt-4 p-3 bg-gray-100 rounded-lg hidden text-left font-normal"></div>
+                <button id="modal-button" class="mt-4 px-6 py-3 rounded-full text-white font-bold transition duration-300 bg-blue-600 hover:bg-blue-700 shadow-lg font-header-footer"></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =================================================================
+        // KHỞI TẠO BIẾN TOÀN CỤC & HẰNG SỐ
+        // =================================================================
+
+        const GAME_STATE = {
+            NAME_INPUT: 'nameInput',
+            INSTRUCTIONS: 'instructions',
+            QUIZ: 'quiz',
+            FEEDBACK: 'feedback',
+            RESULTS: 'results',
+        };
+
+        const MAX_TIME_PER_QUESTION = 40; 
+        const MAX_POINTS_PER_QUESTION = 1000;
+        const appContainer = document.getElementById('app-container');
+        const modalContainer = document.getElementById('modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalScore = document.getElementById('modal-score');
+        const modalExplanation = document.getElementById('modal-explanation');
+        const modalButton = document.getElementById('modal-button');
+
+        let gameState = GAME_STATE.NAME_INPUT;
+        let playerName = '';
+        let totalScore = 0;
+        let questionSet = [];
+        let currentQuestionIndex = 0;
+        let timerInterval = null;
+        let startTime = 0;
+        let isAnswered = false;
+        let leaderboard = [];
+
+        // =================================================================
+        // DỮ LIỆU CÂU HỎI
+        // =================================================================
+        // Sử dụng 10 câu hỏi cốt lõi để đảm bảo tính chính xác và số lượng
+        const QUIZ_DATA_RAW = [
+            { id: 1, q: "Tư tưởng Hồ Chí Minh là sự kết tinh của yếu tố nào sau đây?", a: ["Văn hóa Việt Nam", "Văn hóa phương Đông và phương Tây", "Chủ nghĩa Mác – Lênin", "Tất cả các yếu tố trên"], correctIndex: 3, info: "Tư tưởng Hồ Chí Minh kết hợp văn hóa dân tộc, tinh hoa Đông – Tây, tư tưởng cách mạng Pháp – Mỹ và chủ nghĩa Mác – Lênin, cùng với phẩm chất cá nhân của Người." },
+            { id: 2, q: "Theo Bác, ưu điểm của học thuyết Khổng Tử là gì?", a: ["Lòng nhân ái", "Tu dưỡng đạo đức cá nhân", "Tự do cá nhân", "Phép biện chứng"], correctIndex: 1, info: "Bác nêu rõ: “Học thuyết Khổng Tử có ưu điểm là sự tu dưỡng đạo đức cá nhân.”" },
+            { id: 3, q: "Điểm Người đánh giá cao nhất ở chủ nghĩa Mác là:", a: ["Chính sách dân sinh", "Phương pháp làm việc biện chứng", "Tinh thần bác ái", "Lòng yêu nước"], correctIndex: 1, info: "Theo lời Bác: “Chủ nghĩa Mác có ưu điểm là phương pháp làm việc biện chứng.”" },
+            { id: 4, q: "Hồ Chí Minh khẳng định mục tiêu lớn nhất của mọi học thuyết tiến bộ là:", a: ["Xây dựng thể chế mới", "Giải phóng con người, mưu hạnh phúc cho mọi người", "Nâng cao kinh tế", "Phát triển khoa học"], correctIndex: 1, info: "Bác nhận xét rằng các học thuyết lớn đều “đều nhằm mưu cầu hạnh phúc cho loài người”." },
+            { id: 5, q: "Con đường cứu nước mà Hồ Chí Minh lựa chọn là gì?", a: ["Đi sang phương Đông", "Đi sang phương Tây", "Ở lại trong nước", "Tìm sự giúp đỡ từ Trung Quốc"], correctIndex: 1, info: "Người quyết tâm đi sang phương Tây (Pháp) để tìm hiểu nền văn minh, chính trị và cách mạng của các nước tư bản, từ đó tìm ra con đường cứu nước đúng đắn." },
+            { id: 6, q: "Từ năm 1912-1917, Hồ Chí Minh làm việc tại đâu?", a: ["Anh", "Mỹ", "Pháp", "Đức"], correctIndex: 0, info: "Trong giai đoạn này, Người sống và làm việc ở Anh (London) và sau đó là Mỹ, trước khi trở lại Pháp." },
+            { id: 7, q: "Hồ Chí Minh không tán thành con đường cứu nước của Phan Châu Trinh và Phan Bội Châu vì:", a: ["Hai ông không quan tâm đến truyền bá chữ quốc ngữ.", "Hai ông đều chủ trương đấu tranh bạo lực.", "Con đường của họ phụ thuộc vào thế lực bên ngoài.", "Hai ông không quan tâm đến tổ chức cách mạng ở nước ngoài."], correctIndex: 2, info: "Tuy khâm phục Phan Châu Trinh, Phan Bội Châu nhưng Người không tán thành con đường của họ: Phan Châu Trinh “xin giặc rủ lòng thương”, Phan Bội Châu “đuổi hổ cửa trước, rước báo cửa sau”. Vì thế Người quyết tâm tìm một con đường cứu nước mới." },
+            { id: 8, q: "Đặc điểm nào KHÔNG thuộc phong cách nghệ thuật của thơ Hồ Chí Minh?", a: ["Ngôn ngữ cô đọng, giàu tính tượng trưng", "Phong vị cổ điển kết hợp hơi thở hiện đại", "Hình ảnh giản dị, gần gũi, giàu nhân văn", "Sử dụng hoàn toàn phong cách lãng mạn Tây phương"], correctIndex: 3, info: "Thơ Hồ Chí Minh mang đậm phong vị cổ điển của thơ Đường, đồng thời thấm đẫm tinh thần hiện đại, giản dị và nhân văn. Phong cách thơ của Người là sự kết hợp nhuần nhuyễn giữa cổ điển và hiện đại, không 'hoàn toàn' lãng mạn Tây phương." },
+            { id: 9, q: "Điểm tương đồng về vai trò của Người trong Cách mạng tháng Tám năm 1945, kháng chiến chống Pháp (1945-1954) và kháng chiến chống Mỹ (1954-1975) là", a: ["lãnh đạo cách mạng Việt Nam thực hiện kháng chiến và kiến quốc.", "lãnh đạo cách mạng Việt Nam thực hiện nhiệm vụ xây dựng chế độ mới.", "lãnh đạo cuộc cách mạng giải phóng và bảo vệ tổ quốc.", "lãnh đạo cách mạng Việt Nam thực hiện nhiệm vụ thống nhất đất nước."], correctIndex: 0, info: "Vai trò của Người xuyên suốt là lãnh đạo toàn dân thực hiện đồng thời hai nhiệm vụ chiến lược: kháng chiến chống ngoại xâm và xây dựng đất nước." },
+            { id: 10, q: "\"Hồ Chí Minh - Người đi tìm hình của đất nước\" là tên một bài thơ của tác giả nào?", a: ["Tố Hữu", "Xuân Diệu", "Chế Lan Viên", "Nguyễn Đình Thi"], correctIndex: 2, info: "Đây là bài thơ nổi tiếng được Chế Lan Viên sáng tác, thể hiện hành trình tìm đường cứu nước đầy gian khổ và vĩ đại của Hồ Chủ Tịch." }
+        ];
+
+        function generateQuestionSet() {
+            // Lấy 10 câu hỏi ban đầu, trộn ngẫu nhiên
+            const shuffledQuestions = shuffle([...QUIZ_DATA_RAW]);
+            return shuffledQuestions;
+        }
+
+        // =================================================================
+        // FIREBASE / FIRESTORE LOGIC - Cấu hình độc lập/GitHub
+        // =================================================================
+
+        let db, auth, userId;
+        let isAuthReady = false;
+        let isFirebaseActive = false; 
+
+        // === START: CẤU HÌNH CHO MÔI TRƯỜNG ĐỘC LẬP (GITHUB/EXTERNAL) ===
+        // !!! QUAN TRỌNG: Bạn PHẢI thay thế các giá trị PLACEHOLDER dưới đây 
+        // bằng thông tin cấu hình Firebase Project của bạn để Leaderboard hoạt động.
+        // BẠN CÓ THỂ TÌM THẤY CÁC THÔNG TIN NÀY TRONG CÀI ĐẶT DỰ ÁN CỦA FIREBASE
+        const EXTERNAL_FIREBASE_CONFIG = {
+            apiKey: "YOUR_API_KEY_HERE_123456789", // <-- THAY THẾ CHÍNH XÁC API KEY CỦA BẠN
+            authDomain: "your-project-id.firebaseapp.com", // <-- THAY THẾ PROJECT ID CỦA BẠN (Ví dụ: my-quiz-app-12345.firebaseapp.com)
+            projectId: "your-project-id", // <-- THAY THẾ PROJECT ID CỦA BẠN (Ví dụ: my-quiz-app-12345)
+            storageBucket: "your-project-id.appspot.com", // THAY THẾ PROJECT ID CỦA BẠN
+            messagingSenderId: "999999999999", // THAY THẾ ID CỦA BẠN
+            appId: "1:999999999999:web:abcdefghijkl", // THAY THẾ APP ID CỦA BẠN
+        };
+        // ID app mặc định cho Leaderboard chung trên GitHub (cần nhất quán)
+        const EXTERNAL_APP_ID = 'hcm-quiz-leaderboard-server'; 
+        // === END: CẤU HÌNH CHO MÔI TRƯỜNG ĐỘC LẬP (GITHUB/EXTERNAL) ===
+
+
+        async function initFirebase() {
+            try {
+                // Kiểm tra xem đang chạy trong môi trường Canvas hay không
+                const isCanvasEnvironment = typeof window.__firebase_config !== 'undefined';
+                
+                let currentFirebaseConfig;
+                let initialAuthToken = null;
+
+                if (isCanvasEnvironment) {
+                    // Môi trường Canvas: sử dụng biến toàn cục được cung cấp
+                    currentFirebaseConfig = JSON.parse(__firebase_config);
+                    initialAuthToken = __initial_auth_token;
+                    console.log("Phát hiện môi trường Canvas. Đang sử dụng cấu hình Canvas.");
+                } else {
+                    // Môi trường độc lập (GitHub): sử dụng cấu hình thủ công
+                    currentFirebaseConfig = EXTERNAL_FIREBASE_CONFIG;
+                    const isPlaceholder = currentFirebaseConfig.apiKey.includes("YOUR_API_KEY_HERE") || currentFirebaseConfig.projectId.includes("your-project-id");
+                    
+                    if (isPlaceholder) {
+                        console.error("Lỗi: Firebase API Key hoặc Project ID chưa được thay thế. Leaderboard bị tắt.");
+                        isAuthReady = true;
+                        isFirebaseActive = false;
+                        fetchLeaderboard(); 
+                        return;
+                    }
+                    console.warn("Phát hiện môi trường độc lập (GitHub). Đang sử dụng cấu hình EXTERNAL_FIREBASE_CONFIG.");
+                }
+
+                const app = window.initializeApp(currentFirebaseConfig);
+                db = window.getFirestore(app);
+                auth = window.getAuth(app);
+                isFirebaseActive = true; 
+
+                // Xử lý đăng nhập
+                if (initialAuthToken) {
+                    await window.signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await window.signInAnonymously(auth);
+                }
+
+                // Lắng nghe thay đổi trạng thái Auth để lấy userId
+                window.onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                    } else {
+                        // Tạo ID ngẫu nhiên nếu Auth thất bại (chỉ trong trường hợp rất hiếm)
+                        userId = crypto.randomUUID(); 
+                        console.log("Signed in anonymously. User ID:", userId);
+                    }
+                    isAuthReady = true;
+                    // Bắt đầu lắng nghe Leaderboard ngay sau khi Auth sẵn sàng
+                    fetchLeaderboard();
+                });
+            } catch (error) {
+                console.error("Lỗi khởi tạo Firebase:", error);
+                isAuthReady = true;
+                isFirebaseActive = false;
+                db = null;
+                auth = null;
+            }
+        }
+
+        // Tạo đường dẫn Leaderboard CHUNG (Public)
+        function getLeaderboardCollectionPath() {
+            // Sử dụng __app_id nếu có, nếu không sử dụng ID mặc định cho môi trường độc lập
+            const appId = typeof __app_id !== 'undefined' ? __app_id : EXTERNAL_APP_ID;
+            // Đường dẫn Public Data: artifacts/{appId}/public/data/quizLeaderboard
+            return `artifacts/${appId}/public/data/quizLeaderboard`;
+        }
+
+        function fetchLeaderboard() {
+            if (!db || !isAuthReady || !isFirebaseActive) {
+                leaderboard = []; 
+                if (gameState === GAME_STATE.RESULTS) {
+                    renderResults(); 
+                }
+                return;
+            }
+
+            const leaderboardRef = window.collection(db, getLeaderboardCollectionPath());
+            // Sắp xếp theo điểm giảm dần và giới hạn 10 người
+            const q = window.query(leaderboardRef, window.orderBy('score', 'desc'), window.limit(10));
+
+            // Lắng nghe sự thay đổi real-time
+            window.onSnapshot(q, (snapshot) => {
+                leaderboard = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    score: doc.data().score ? parseInt(doc.data().score) : 0 
+                }));
+                // Sắp xếp lại lần nữa trong bộ nhớ để chắc chắn
+                leaderboard.sort((a, b) => b.score - a.score); 
+
+                console.log("Leaderboard updated:", leaderboard);
+                if (gameState === GAME_STATE.RESULTS) {
+                    // Chỉ render lại Leaderboard nếu đang ở màn hình kết quả
+                    renderLeaderboard(); 
+                }
+            }, (error) => {
+                console.error("Error fetching leaderboard:", error);
+            });
+        }
+
+        async function saveScore(name, score) {
+            if (!db || !isAuthReady || !isFirebaseActive || score === 0) {
+                console.warn("Score saving skipped because Firebase is not active or score is zero.");
+                return;
+            }
+
+            const data = {
+                name: name,
+                score: score,
+                timestamp: Date.now(),
+                userId: userId, 
+            };
+
+            try {
+                // Thêm tài liệu mới vào bộ sưu tập Leaderboard chung
+                await window.addDoc(window.collection(db, getLeaderboardCollectionPath()), data);
+                console.log("Score saved successfully:", data);
+            } catch (error) {
+                console.error("Error saving score:", error);
+            }
+        }
+
+        // =================================================================
+        // SOUND (Tone.js) - Nhạc nền SÔI ĐỘNG (KAHOOT-STYLE) VÀ FX MỚI
+        // =================================================================
+
+        // 1. CẤU HÌNH HIỆU ỨNG CHUNG (FX)
+        const fxReverb = new Tone.Reverb({ decay: 1.5, wet: 0.3 }).toDestination(); 
+
+        // Synth cho Correct/Finish (âm thanh tích tích, cao, sạch)
+        const melodyFxSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sine" }, // Sóng Sine cho âm thanh sạch hơn (tích tích)
+            envelope: { attack: 0.005, release: 0.1 }
+        }).connect(fxReverb);
+        melodyFxSynth.volume.value = -8; 
+
+        // Synth cho Wrong (âm thanh "ẹc ẹc" - Noise/Buzz)
+        const errorFxSynth = new Tone.NoiseSynth({
+            noise: { type: "white" }, // FIX: Đã đổi sang "white" noise để tương thích với Tone.js 14.8.49
+            envelope: { attack: 0.005, decay: 0.2, sustain: 0, release: 0.2 }
+        }).toDestination();
+        errorFxSynth.volume.value = -10; 
+
+        
+        // 2. CẤU HÌNH NHẠC NỀN (BGM - Sôi động hơn)
+        const bgmSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" }, 
+            envelope: { attack: 0.05, decay: 0.1, sustain: 0.5, release: 0.2 } 
+        });
+        
+        const delay = new Tone.PingPongDelay("8n", 0.2).toDestination(); 
+        bgmSynth.chain(delay, Tone.Destination);
+        bgmSynth.volume.value = -15; 
+
+        // Các nốt nhạc được thiết kế lại cho cảm giác nhanh và sôi động hơn
+        const bgmNotes = ["C4", "G3", "A3", "F3"]; 
+        let bgmLoop = null;
+        let isBgmPlaying = false;
+        
+        const BGM_PACE = "4n"; // Tốc độ nhịp 4 nốt
+
+        function startBGM() {
+            Tone.start();
+            
+            if (isBgmPlaying) return;
+
+            isBgmPlaying = true;
+            if (!bgmLoop) {
+                let noteIndex = 0;
+                // Vòng lặp phức tạp hơn, tạo cảm giác bassline và melody đan xen
+                bgmLoop = new Tone.Loop(time => {
+                    const note = bgmNotes[noteIndex % bgmNotes.length];
+                    
+                    // Main Melody (cao hơn)
+                    bgmSynth.triggerAttackRelease(note, "16n", time); 
+                    
+                    // Pulse/Bassline (thấp hơn 1 quãng 8)
+                    bgmSynth.triggerAttackRelease(Tone.Frequency(note).transpose(-12).toNote(), "8n", time, 0.5); 
+                    
+                    noteIndex++;
+                }, BGM_PACE).start(0); 
+            }
+            Tone.Transport.bpm.value = 180; // Tăng BPM để sôi động hơn
+            Tone.Transport.start();
+        }
+
+        function stopBGM() {
+            if (bgmLoop) {
+                bgmLoop.stop();
+            }
+            bgmSynth.releaseAll(); 
+            isBgmPlaying = false;
+        }
+        
+        // 3. CÁC ÂM THANH HIỆU ỨNG (FX) MỚI
+        function playCorrectSound() {
+            Tone.start();
+            const now = Tone.now();
+            // Tích tích: Hai nốt cao, ngắn, dứt khoát
+            melodyFxSynth.triggerAttackRelease("G6", "64n", now, 0.8);
+            melodyFxSynth.triggerAttackRelease("B6", "64n", now + 0.05, 0.8);
+        }
+
+        function playWrongSound() {
+            Tone.start();
+            // Ẹc Ẹc: Noise Synth (giống tiếng buzz/error)
+            errorFxSynth.triggerAttackRelease("8n"); 
+        }
+
+        function playFinishSound() {
+            Tone.start();
+            const now = Tone.now();
+            melodyFxSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n", now);
+            melodyFxSynth.triggerAttackRelease("G6", "8n", now + 0.3);
+            melodyFxSynth.triggerAttackRelease("C7", "8n", now + 0.4);
+        }
+
+        // =================================================================
+        // SCORING LOGIC & HÀM HỖ TRỢ
+        // =================================================================
+
+        function calculateScore(timeTaken) {
+            if (timeTaken < 0.5) {
+                return MAX_POINTS_PER_QUESTION; 
+            }
+            const ratio = timeTaken / MAX_TIME_PER_QUESTION; 
+            const halvedRatio = ratio / 2; 
+            const multiplier = 1 - halvedRatio; 
+            const rawScore = MAX_POINTS_PER_QUESTION * multiplier; 
+            return Math.round(rawScore);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // =================================================================
+        // TIMER LOGIC
+        // =================================================================
+
+        function updateTimerBar(elapsedTime) {
+            const bar = document.getElementById('timer-bar');
+            if (!bar) return;
+
+            const timeLeft = Math.max(0, MAX_TIME_PER_QUESTION - elapsedTime);
+            const percentage = (timeLeft / MAX_TIME_PER_QUESTION) * 100;
+
+            bar.style.width = `${percentage}%`;
+
+            let color = '#10b981'; 
+            if (percentage < 50) {
+                color = '#f59e0b'; 
+            }
+            if (percentage < 20) {
+                color = '#ef4444'; 
+            }
+            bar.style.backgroundColor = color;
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            isAnswered = false;
+
+            clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                const currentTime = Date.now();
+                const elapsedTime = (currentTime - startTime) / 1000;
+
+                updateTimerBar(elapsedTime);
+
+                if (elapsedTime >= MAX_TIME_PER_QUESTION) {
+                    clearInterval(timerInterval);
+                    if (!isAnswered) {
+                        handleTimeout();
+                    }
+                }
+            }, 50); 
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function handleTimeout() {
+            isAnswered = true;
+            stopTimer();
+            const currentQ = questionSet[currentQuestionIndex];
+            showFeedback(false, 0, currentQ.info);
+        }
+
+
+        // =================================================================
+        // RENDER FUNCTIONS
+        // =================================================================
+
+        function renderApp() {
+            appContainer.innerHTML = '';
+            modalContainer.classList.add('hidden');
+            
+            appContainer.style.minHeight = 'auto'; 
+
+            switch (gameState) {
+                case GAME_STATE.NAME_INPUT:
+                    stopBGM(); 
+                    renderNameInput();
+                    break;
+                case GAME_STATE.INSTRUCTIONS:
+                    startBGM(); 
+                    renderInstructions();
+                    break;
+                case GAME_STATE.QUIZ:
+                    renderQuiz();
+                    break;
+                case GAME_STATE.RESULTS:
+                    stopBGM(); 
+                    renderResults(); 
+                    break;
+                default:
+                    renderNameInput();
+            }
+        }
+
+        function renderNameInput() {
+            appContainer.innerHTML = `
+                <div class="text-center p-4 md:p-8 font-normal">
+                    <h2 class="text-4xl font-header-footer text-red-600 mb-6 animate-pulse">BẮT ĐẦU TRÒ CHƠI</h2>
+                    <p class="text-gray-600 text-lg mb-8 font-normal">Chào mừng bạn đến với hành trình tìm hiểu về Bác Hồ kính yêu!</p>
+                    
+                    <div class="max-w-md mx-auto">
+                        <input id="player-name-input" type="text" placeholder="Nhập Họ Tên của bạn"
+                               class="w-full p-4 border-2 border-gray-300 rounded-lg text-lg font-normal focus:outline-none focus:ring-4 focus:ring-blue-500 transition duration-300"
+                               value="${playerName}">
+                        <button id="start-button"
+                                class="mt-8 w-full py-4 rounded-full text-white font-bold text-xl font-header-footer transition duration-300 bg-blue-600 hover:bg-blue-700 shadow-xl hover:shadow-2xl disabled:opacity-50"
+                                disabled>
+                            BẮT ĐẦU TRÒ CHƠI <i class="fas fa-play ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const nameInput = document.getElementById('player-name-input');
+            const startButton = document.getElementById('start-button');
+
+            const checkInput = () => {
+                const name = nameInput.value.trim();
+                playerName = name;
+                startButton.disabled = name.length < 2;
+            };
+
+            nameInput.addEventListener('input', checkInput);
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !startButton.disabled) {
+                    handleNameSubmit();
+                }
+            });
+            startButton.addEventListener('click', handleNameSubmit);
+            checkInput(); 
+        }
+
+        function handleNameSubmit() {
+            playerName = document.getElementById('player-name-input').value.trim();
+            if (playerName) {
+                questionSet = generateQuestionSet();
+                gameState = GAME_STATE.INSTRUCTIONS;
+                renderApp();
+            }
+        }
+
+        function renderInstructions() {
+            appContainer.innerHTML = `
+                <div class="p-4 md:p-8 font-normal text-center">
+                    <h2 class="text-3xl font-header-footer text-red-600 mb-6">LUẬT CHƠI</h2>
+                    <p class="text-lg text-gray-700 mb-8 font-normal">Chào bạn <span class="font-bold text-red-800">${playerName}</span>! Hãy nắm rõ luật chơi để đạt điểm cao nhất nhé.</p>
+
+                    <div class="space-y-6 text-left max-w-xl mx-auto text-gray-800">
+                        <div class="flex items-start bg-blue-50 p-4 rounded-lg shadow-md">
+                            <i class="fas fa-question-circle text-2xl text-blue-600 mr-4 mt-1"></i>
+                            <p class="font-normal text-base">Trò chơi gồm <span class="font-bold">${questionSet.length} câu hỏi</span> trắc nghiệm với 4 phương án.</p>
+                        </div>
+
+                        <div class="flex items-start bg-yellow-50 p-4 rounded-lg shadow-md">
+                            <i class="fas fa-stopwatch text-2xl text-yellow-600 mr-4 mt-1"></i>
+                            <p class="font-normal text-base">Thời gian cho mỗi câu hỏi là <span class="font-bold text-red-600">${MAX_TIME_PER_QUESTION} giây</span>.</p>
+                        </div>
+
+                        <div class="flex items-start bg-green-50 p-4 rounded-lg shadow-md">
+                            <i class="fas fa-medal text-2xl text-green-600 mr-4 mt-1"></i>
+                            <p class="font-normal text-base"><span class="font-bold">Trả lời đúng:</span> Điểm nhận được càng cao nếu bạn trả lời càng nhanh. Tối đa 1000 điểm/câu.</p>
+                        </div>
+
+                        <div class="flex items-start bg-red-50 p-4 rounded-lg shadow-md">
+                            <i class="fas fa-times-circle text-2xl text-red-600 mr-4 mt-1"></i>
+                            <p class="font-normal text-base"><span class="font-bold">Trả lời sai/Hết giờ:</span> Bạn sẽ nhận được 0 điểm.</p>
+                        </div>
+                    </div>
+
+                    <button onclick="handleStartQuiz()"
+                            class="mt-10 px-8 py-4 rounded-full text-white font-bold text-xl font-header-footer transition duration-300 bg-green-600 hover:bg-green-700 shadow-xl hover:shadow-2xl">
+                        MÌNH ĐÃ HIỂU LUẬT CHƠI <i class="fas fa-check ml-2"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function handleStartQuiz() {
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            gameState = GAME_STATE.QUIZ;
+            renderApp();
+        }
+
+        function renderQuiz() {
+            if (currentQuestionIndex >= questionSet.length) {
+                gameState = GAME_STATE.RESULTS;
+                renderApp();
+                return;
+            }
+
+            const currentQ = questionSet[currentQuestionIndex];
+            const currentQNumber = currentQuestionIndex + 1;
+            const totalQNumber = questionSet.length;
+            const answerColors = ['color-1', 'color-2', 'color-3', 'color-4'];
+
+            appContainer.innerHTML = `
+                <div class="p-2 md:p-4 font-quiz">
+                    <!-- Thanh đếm ngược -->
+                    <div id="timer-bar-container">
+                        <div id="timer-bar" style="width: 100%; transition-duration: ${MAX_TIME_PER_QUESTION}s;"></div>
+                    </div>
+                    
+                    <div class="text-center mb-6">
+                        <p class="text-xl font-bold text-blue-600">Câu ${currentQNumber}/${totalQNumber}</p>
+                    </div>
+
+                    <!-- Khu vực Câu hỏi -->
+                    <div class="bg-blue-100 p-6 rounded-lg mb-8 shadow-lg text-center">
+                        <h3 class="text-xl md:text-2xl font-bold text-gray-800 font-quiz">${currentQ.q}</h3>
+                    </div>
+
+                    <!-- Khu vực Câu trả lời -->
+                    <div id="answers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${currentQ.a.map((answer, index) => `
+                            <button class="answer-button flex items-center justify-center min-h-[100px] p-4 md:p-6 rounded-xl text-white text-lg font-bold shadow-lg ${answerColors[index]}"
+                                    onclick="handleAnswerClick(${index})"
+                                    data-index="${index}">
+                                ${answer}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            startTimer();
+        }
+
+        function handleAnswerClick(selectedIndex) {
+            if (isAnswered) return;
+            
+            isAnswered = true;
+            stopTimer();
+
+            const timeTaken = (Date.now() - startTime) / 1000;
+            const currentQ = questionSet[currentQuestionIndex];
+            const isCorrect = selectedIndex === currentQ.correctIndex;
+            const pointsEarned = isCorrect ? calculateScore(timeTaken) : 0;
+            
+            totalScore += pointsEarned;
+
+            const buttons = document.querySelectorAll('.answer-button');
+            buttons.forEach((btn, index) => {
+                btn.classList.remove('shadow-lg', 'hover:shadow-2xl');
+                btn.disabled = true;
+
+                if (index === selectedIndex) {
+                    btn.classList.add('ring-4', isCorrect ? 'ring-green-500' : 'ring-red-500');
+                    btn.style.opacity = '1';
+                } else if (index === currentQ.correctIndex) {
+                    btn.classList.add('ring-4', 'ring-green-500', 'ring-offset-2');
+                    btn.style.opacity = '1';
+                } else {
+                    btn.style.opacity = '0.5';
+                }
+            });
+
+            showFeedback(isCorrect, pointsEarned, currentQ.info);
+        }
+
+        function showFeedback(isCorrect, pointsEarned, explanation) {
+            if (isCorrect) {
+                playCorrectSound();
+                modalTitle.textContent = "Bạn đã trả lời đúng rồi nè!";
+                modalTitle.classList.remove('text-red-600');
+                modalTitle.classList.add('text-green-600');
+            } else {
+                playWrongSound();
+                modalTitle.textContent = "Tiếc quá, bạn đã trả lời sai rồi!";
+                modalTitle.classList.remove('text-green-600');
+                modalTitle.classList.add('text-red-600');
+            }
+
+            modalMessage.innerHTML = `Tổng điểm hiện tại: <span class="font-bold text-blue-600">${totalScore.toLocaleString()} điểm</span>`;
+            
+            modalScore.textContent = `+${pointsEarned.toLocaleString()} điểm`;
+            modalScore.classList.remove('hidden');
+
+            modalExplanation.innerHTML = `<span class="font-bold text-gray-800">Thông tin thêm:</span><br>${explanation}`;
+            modalExplanation.classList.remove('hidden');
+
+            modalButton.textContent = "Câu tiếp theo";
+            modalButton.onclick = handleNextQuestion;
+            modalButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+            modalButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+
+            modalContainer.classList.remove('hidden');
+        }
+
+        function handleNextQuestion() {
+            currentQuestionIndex++;
+            modalContainer.classList.add('hidden');
+            modalScore.classList.add('hidden');
+            modalExplanation.classList.add('hidden');
+            renderApp();
+        }
+
+        function renderResults() {
+            if (totalScore > 0) {
+                saveScore(playerName, totalScore);
+            }
+            showResultModal();
+        }
+
+        function showResultModal() {
+            playFinishSound();
+
+            modalTitle.textContent = `🎉 CHÚC MỪNG BẠN ${playerName.toUpperCase()} ĐÃ HOÀN THÀNH TRÒ CHƠI! 🎉`;
+            modalTitle.classList.remove('text-red-600');
+            modalTitle.classList.add('text-green-600');
+
+            modalMessage.innerHTML = `<span class="text-xl md:text-2xl text-gray-800 font-normal">Số điểm cuối cùng của bạn là:</span>`;
+            
+            modalScore.textContent = `${totalScore.toLocaleString()} điểm`;
+            modalScore.classList.remove('hidden');
+
+            modalExplanation.classList.add('hidden');
+
+            modalButton.textContent = "XEM KẾT QUẢ VÀ BẢNG XẾP HẠNG";
+            modalButton.onclick = handleShowLeaderboard;
+            modalButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+            modalButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+
+            modalContainer.classList.remove('hidden');
+        }
+        
+        function handleShowLeaderboard() {
+            modalContainer.classList.add('hidden'); 
+            renderLeaderboard(); 
+        }
+
+        function renderLeaderboard() {
+            const isLeaderboardActive = isFirebaseActive && db !== null;
+            let leaderboardContent;
+
+            if (isLeaderboardActive) {
+                leaderboardContent = `
+                    <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl max-w-lg mx-auto border-4 border-yellow-400">
+                        <h3 class="text-3xl font-header-footer text-yellow-600 mb-4 border-b-2 border-yellow-300 pb-2 text-center">🏆 TOP 10 NGƯỜI CHƠI XUẤT SẮC 🏆</h3>
+                        <ul class="space-y-3 mt-4">
+                            ${leaderboard.map((item, index) => `
+                                <li class="flex justify-between items-center p-3 rounded-lg ${index === 0 ? 'bg-yellow-100 ring-2 ring-yellow-500' : index === 1 ? 'bg-gray-200' : index === 2 ? 'bg-amber-100' : 'bg-white border-b border-gray-100'} transition duration-300 transform hover:scale-[1.02] shadow-md">
+                                    <span class="font-header-footer w-8 text-center text-xl ${index === 0 ? 'text-yellow-700' : 'text-gray-600'}">${index + 1}.</span>
+                                    <span class="flex-1 text-left font-normal text-base">${item.name} ${item.userId === userId ? '<span class="text-red-500 font-bold">(Bạn)</span>' : ''}</span>
+                                    <span class="font-bold text-right text-xl text-green-600 font-header-footer">${item.score.toLocaleString()}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                leaderboardContent = `
+                    <div class="bg-red-100 p-6 md:p-8 rounded-xl shadow-2xl max-w-lg mx-auto border-4 border-red-500">
+                        <h3 class="text-xl font-header-footer text-red-700 mb-4 text-center"><i class="fas fa-exclamation-triangle mr-2"></i> CHỨC NĂNG TẮT</h3>
+                        <p class="text-base font-normal text-red-700 text-center">Bảng xếp hạng đang bị tắt do chưa cấu hình đúng Firebase.</p>
+                        <p class="text-sm font-normal text-red-500 mt-2 text-center">Vui lòng thay thế 5 dòng giá trị placeholder trong biến <span class="font-mono bg-red-200 px-1 rounded">EXTERNAL_FIREBASE_CONFIG</span> trong phần JavaScript để bật chức năng này.</p>
+                    </div>
+                `;
+            }
+            
+            appContainer.innerHTML = `
+                <div class="p-4 md:p-8 font-normal text-center">
+                    <h2 class="text-3xl font-header-footer text-red-600 mb-6 animate-pulse">KẾT QUẢ TRÒ CHƠI</h2>
+                    <p class="text-xl font-normal text-gray-700 mb-8">Số điểm của bạn là: <span class="font-header-footer text-blue-600 text-3xl">${totalScore.toLocaleString()}</span></p>
+
+                    ${leaderboardContent}
+
+                    <button onclick="handleGoHome()"
+                            class="mt-10 px-8 py-4 rounded-full text-white font-bold text-xl font-header-footer transition duration-300 bg-red-600 hover:bg-red-700 shadow-xl hover:shadow-2xl">
+                        VỀ TRANG CHỦ <i class="fas fa-home ml-2"></i>
+                    </button>
+                </div>
+            `;
+            gameState = GAME_STATE.RESULTS; 
+        }
+
+        function handleGoHome() {
+            playerName = '';
+            totalScore = 0;
+            currentQuestionIndex = 0;
+            isAnswered = false;
+            gameState = GAME_STATE.NAME_INPUT;
+            renderApp();
+        }
+
+        // =================================================================
+        // KHỞI TẠO
+        // =================================================================
+        window.onload = function () {
+            initFirebase(); 
+            // Đảm bảo tất cả âm thanh Tone.js đã tải trước khi render.
+            Tone.loaded().then(() => {
+                renderApp(); 
+            }).catch(err => {
+                 console.error("Lỗi khi tải tài nguyên Tone.js:", err);
+                 renderApp(); 
+            });
+        }
+    </script>
+</body>
+</html>
