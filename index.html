@@ -131,31 +131,10 @@
         @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        setLogLevel('debug');
-
-        window.initializeApp = initializeApp;
-        window.getAuth = getAuth;
-        window.signInAnonymously = signInAnonymously;
-        window.signInWithCustomToken = signInWithCustomToken;
-        window.onAuthStateChanged = onAuthStateChanged;
-        window.getFirestore = getFirestore;
-        window.doc = doc;
-        window.getDoc = getDoc;
-        window.addDoc = addDoc;
-        window.setDoc = setDoc;
-        window.updateDoc = updateDoc;
-        window.onSnapshot = onSnapshot;
-        window.collection = collection;
-        window.query = query;
-        window.limit = limit;
-        window.orderBy = orderBy;
+    <!-- Firebase removed (leaderboard disabled) -->
+    <script>
+        // Firebase and leaderboard functionality intentionally removed.
+        // Score persistence / leaderboard has been removed per request.
     </script>
 </head>
 
@@ -226,7 +205,6 @@
         let timerInterval = null;
         let startTime = 0;
         let isAnswered = false;
-        let leaderboard = [];
 
         // =================================================================
         // DỮ LIỆU CÂU HỎI
@@ -249,157 +227,6 @@
             // Lấy 10 câu hỏi ban đầu, trộn ngẫu nhiên
             const shuffledQuestions = shuffle([...QUIZ_DATA_RAW]);
             return shuffledQuestions;
-        }
-
-        // =================================================================
-        // FIREBASE / FIRESTORE LOGIC - Cấu hình độc lập/GitHub
-        // =================================================================
-
-        let db, auth, userId;
-        let isAuthReady = false;
-        let isFirebaseActive = false; 
-
-        // === START: CẤU HÌNH CHO MÔI TRƯỜNG ĐỘC LẬP (GITHUB/EXTERNAL) ===
-        // !!! QUAN TRỌNG: Bạn PHẢI thay thế các giá trị PLACEHOLDER dưới đây 
-        // bằng thông tin cấu hình Firebase Project của bạn để Leaderboard hoạt động.
-        // BẠN CÓ THỂ TÌM THẤY CÁC THÔNG TIN NÀY TRONG CÀI ĐẶT DỰ ÁN CỦA FIREBASE
-        const EXTERNAL_FIREBASE_CONFIG = {
-            apiKey: "YOUR_API_KEY_HERE_123456789", // <-- THAY THẾ CHÍNH XÁC API KEY CỦA BẠN
-            authDomain: "your-project-id.firebaseapp.com", // <-- THAY THẾ PROJECT ID CỦA BẠN (Ví dụ: my-quiz-app-12345.firebaseapp.com)
-            projectId: "your-project-id", // <-- THAY THẾ PROJECT ID CỦA BẠN (Ví dụ: my-quiz-app-12345)
-            storageBucket: "your-project-id.appspot.com", // THAY THẾ PROJECT ID CỦA BẠN
-            messagingSenderId: "999999999999", // THAY THẾ ID CỦA BẠN
-            appId: "1:999999999999:web:abcdefghijkl", // THAY THẾ APP ID CỦA BẠN
-        };
-        // ID app mặc định cho Leaderboard chung trên GitHub (cần nhất quán)
-        const EXTERNAL_APP_ID = 'hcm-quiz-leaderboard-server'; 
-        // === END: CẤU HÌNH CHO MÔI TRƯỜNG ĐỘC LẬP (GITHUB/EXTERNAL) ===
-
-
-        async function initFirebase() {
-            try {
-                // Kiểm tra xem đang chạy trong môi trường Canvas hay không
-                const isCanvasEnvironment = typeof window.__firebase_config !== 'undefined';
-                
-                let currentFirebaseConfig;
-                let initialAuthToken = null;
-
-                if (isCanvasEnvironment) {
-                    // Môi trường Canvas: sử dụng biến toàn cục được cung cấp
-                    currentFirebaseConfig = JSON.parse(__firebase_config);
-                    initialAuthToken = __initial_auth_token;
-                    console.log("Phát hiện môi trường Canvas. Đang sử dụng cấu hình Canvas.");
-                } else {
-                    // Môi trường độc lập (GitHub): sử dụng cấu hình thủ công
-                    currentFirebaseConfig = EXTERNAL_FIREBASE_CONFIG;
-                    const isPlaceholder = currentFirebaseConfig.apiKey.includes("YOUR_API_KEY_HERE") || currentFirebaseConfig.projectId.includes("your-project-id");
-                    
-                    if (isPlaceholder) {
-                        console.error("Lỗi: Firebase API Key hoặc Project ID chưa được thay thế. Leaderboard bị tắt.");
-                        isAuthReady = true;
-                        isFirebaseActive = false;
-                        fetchLeaderboard(); 
-                        return;
-                    }
-                    console.warn("Phát hiện môi trường độc lập (GitHub). Đang sử dụng cấu hình EXTERNAL_FIREBASE_CONFIG.");
-                }
-
-                const app = window.initializeApp(currentFirebaseConfig);
-                db = window.getFirestore(app);
-                auth = window.getAuth(app);
-                isFirebaseActive = true; 
-
-                // Xử lý đăng nhập
-                if (initialAuthToken) {
-                    await window.signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await window.signInAnonymously(auth);
-                }
-
-                // Lắng nghe thay đổi trạng thái Auth để lấy userId
-                window.onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase Auth Ready. User ID:", userId);
-                    } else {
-                        // Tạo ID ngẫu nhiên nếu Auth thất bại (chỉ trong trường hợp rất hiếm)
-                        userId = crypto.randomUUID(); 
-                        console.log("Signed in anonymously. User ID:", userId);
-                    }
-                    isAuthReady = true;
-                    // Bắt đầu lắng nghe Leaderboard ngay sau khi Auth sẵn sàng
-                    fetchLeaderboard();
-                });
-            } catch (error) {
-                console.error("Lỗi khởi tạo Firebase:", error);
-                isAuthReady = true;
-                isFirebaseActive = false;
-                db = null;
-                auth = null;
-            }
-        }
-
-        // Tạo đường dẫn Leaderboard CHUNG (Public)
-        function getLeaderboardCollectionPath() {
-            // Sử dụng __app_id nếu có, nếu không sử dụng ID mặc định cho môi trường độc lập
-            const appId = typeof __app_id !== 'undefined' ? __app_id : EXTERNAL_APP_ID;
-            // Đường dẫn Public Data: artifacts/{appId}/public/data/quizLeaderboard
-            return `artifacts/${appId}/public/data/quizLeaderboard`;
-        }
-
-        function fetchLeaderboard() {
-            if (!db || !isAuthReady || !isFirebaseActive) {
-                leaderboard = []; 
-                if (gameState === GAME_STATE.RESULTS) {
-                    renderResults(); 
-                }
-                return;
-            }
-
-            const leaderboardRef = window.collection(db, getLeaderboardCollectionPath());
-            // Sắp xếp theo điểm giảm dần và giới hạn 10 người
-            const q = window.query(leaderboardRef, window.orderBy('score', 'desc'), window.limit(10));
-
-            // Lắng nghe sự thay đổi real-time
-            window.onSnapshot(q, (snapshot) => {
-                leaderboard = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    score: doc.data().score ? parseInt(doc.data().score) : 0 
-                }));
-                // Sắp xếp lại lần nữa trong bộ nhớ để chắc chắn
-                leaderboard.sort((a, b) => b.score - a.score); 
-
-                console.log("Leaderboard updated:", leaderboard);
-                if (gameState === GAME_STATE.RESULTS) {
-                    // Chỉ render lại Leaderboard nếu đang ở màn hình kết quả
-                    renderLeaderboard(); 
-                }
-            }, (error) => {
-                console.error("Error fetching leaderboard:", error);
-            });
-        }
-
-        async function saveScore(name, score) {
-            if (!db || !isAuthReady || !isFirebaseActive || score === 0) {
-                console.warn("Score saving skipped because Firebase is not active or score is zero.");
-                return;
-            }
-
-            const data = {
-                name: name,
-                score: score,
-                timestamp: Date.now(),
-                userId: userId, 
-            };
-
-            try {
-                // Thêm tài liệu mới vào bộ sưu tập Leaderboard chung
-                await window.addDoc(window.collection(db, getLeaderboardCollectionPath()), data);
-                console.log("Score saved successfully:", data);
-            } catch (error) {
-                console.error("Error saving score:", error);
-            }
         }
 
         // =================================================================
@@ -811,9 +638,8 @@
         }
 
         function renderResults() {
-            if (totalScore > 0) {
-                saveScore(playerName, totalScore);
-            }
+            // Leaderboard and Firebase were removed.
+            // We simply show the results modal (no persistence).
             showResultModal();
         }
 
@@ -829,24 +655,18 @@
             modalScore.textContent = `${totalScore.toLocaleString()} điểm`;
             modalScore.classList.remove('hidden');
 
-            modalExplanation.classList.add('hidden');            
-        }
-                    
-            appContainer.innerHTML = `
-                <div class="p-4 md:p-8 font-normal text-center">
-                    <h2 class="text-3xl font-header-footer text-red-600 mb-6 animate-pulse">KẾT QUẢ TRÒ CHƠI</h2>
-                    <p class="text-xl font-normal text-gray-700 mb-8">Số điểm của bạn là: <span class="font-header-footer text-blue-600 text-3xl">${totalScore.toLocaleString()}</span></p>
+            modalExplanation.classList.add('hidden');
 
-                    ${leaderboardContent}
+            // Changed behavior: go back home (no leaderboard view)
+            modalButton.textContent = "VỀ TRANG CHỦ";
+            modalButton.onclick = handleGoHome;
+            modalButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+            modalButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
 
-                    <button onclick="handleGoHome()"
-                            class="mt-10 px-8 py-4 rounded-full text-white font-bold text-xl font-header-footer transition duration-300 bg-red-600 hover:bg-red-700 shadow-xl hover:shadow-2xl">
-                        VỀ TRANG CHỦ <i class="fas fa-home ml-2"></i>
-                    </button>
-                </div>
-            `;
-            gameState = GAME_STATE.RESULTS; 
+            modalContainer.classList.remove('hidden');
         }
+        
+        // Removed leaderboard rendering functions - leaderboard disabled
 
         function handleGoHome() {
             playerName = '';
@@ -861,7 +681,7 @@
         // KHỞI TẠO
         // =================================================================
         window.onload = function () {
-            initFirebase(); 
+            // Firebase / leaderboard removed.
             // Đảm bảo tất cả âm thanh Tone.js đã tải trước khi render.
             Tone.loaded().then(() => {
                 renderApp(); 
@@ -873,5 +693,5 @@
     </script>
 </body>
 </html>
-</html>
+
 
